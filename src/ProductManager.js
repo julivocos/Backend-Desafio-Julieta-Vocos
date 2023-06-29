@@ -113,18 +113,18 @@ class ProductManager {
 const manager = new ProductManager('./products.json')
 
 manager.getProducts()
-    .then((products) =>{
+    .then(() =>{
     })
-    .catch ((err) =>{
-        console.log("Error al obtener los productos ", err)
+    .catch (() =>{
+        
     })
 
 manager.getProductById(2)
-    .then((product) => {
+    .then(() => {
 
     })
-    .catch((err) => {
-        console.error('Error al obtener el producto:', err);
+    .catch(() => {
+        
      })
 
 /*manager.updateProduct(4,

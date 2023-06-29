@@ -18,7 +18,6 @@ app.get('/products', async (req , res)  =>{
         return res.send(limitProducts)
 
     } catch (error) {
-        console.error('Error al obtener los productos: ', error)
     }
 
 })
@@ -26,15 +25,16 @@ app.get('/products', async (req , res)  =>{
 app.get('/products/:pid', async (req, res) => {
     try {
         const pid = parseInt(req.params.pid)
-       
         const products = await manager.getProductById()
         const product = products.find(product => product.id === pid)
-       
+
+        if (pid>10 || pid<1) {
+            const objerror= {Error:"El producto no existe"}
+            return res.send(objerror)
+        }
         return res.send(product)
 
-    } catch (error) {
-        console.error('No se encuentra el producto: ', error)
-        
+    } catch (error) {        
     }
   
   })
