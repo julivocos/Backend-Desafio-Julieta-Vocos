@@ -8,32 +8,6 @@ class ProductManager {
         
     }
 
-    addProduct (product) {
-
-        if (!product.title || 
-            !product.code || 
-            !product.description || 
-            !product.price || 
-            !product.thumbnail || 
-            !product.stock 
-            ) {
-            console.log ("Error! todos los campos son obligatorios")
-            return
-        }
-
-        const codigoRepetido = this.products.find ((element) => element.code === product.code)
-        if (codigoRepetido ) {
-            return("Codigo de producto repetido")
-            
-        }
-        
-        product.id =this.products.length + 1;
-        this.products.push(product)
-        console.log(`Se agregó un nuevo producto con el id ${product.id}`)
-        this.guardarProductos()
-        
-        
-    }
     async getProducts () {
       try {
         const data = await fs.promises.readFile(this.path, 'utf-8')
@@ -46,98 +20,118 @@ class ProductManager {
       }
     }
 
+    async addProduct (product) {
+      try {
+        await this.getProducts()
+        if (
+          !product.title || 
+          !product.code || 
+          !product.description || 
+          !product.price || 
+          !product.thumbnail || 
+          !product.stock 
+        ) {
+          console.log ("Error! todos los campos son obligatorios")
+          return
+        }
+
+        const codigoRepetido = this.products.find ((element) => element.code === product.code)
+
+      if (codigoRepetido ) {
+        console.log("Codigo de producto repetido")
+        return
+      }
+
+      const newProduct ={
+        title: product.title,
+        description: product.description,
+        price: product.price,
+        thumbnail: product.thumbnails ?? [],
+        code: product.code,
+        stock: product.stock,
+        id :this.products.length + 1,
+        status : product.status ?? true,
+        category: product.category
+      }
+
+      this.products.push(newProduct)
+      console.log(`Se agregó un nuevo producto con el id ${newProduct.id}`)
+      
+      await fs.promises.writeFile(this.path, JSON.stringify(this.products, null, 2))
+      console.log('Producto guardado correctamente')
+      return newProduct
+
+      } catch (error) {
+        console.log('Error al agregar el producto', error)
+      }
+      
+    }
+
     async getProductById (id) {
       try {
-        this.getProducts()
-        const product = this.products.find(product => product.id === id)
-        console.log('Se encontro el producto con ID')
+        await this.getProducts()
+        const product = this.products.find((p) => p.id === id)
+        console.log(product)
+
+        return product
 
       } catch (error) {
         console.log('Error al obtener el producto:', error)
       }
-      return this.getProducts()
     }
 
-    updateProduct(id, updateProduct) {
-        this.getProducts()
-          .then((products) => {
-            const productIndex = products.findIndex((product) => product.id === id);
-    
-            if (productIndex === -1) {
+    async updateProduct(id, data) {
+       
+          try {
+           await this.getProducts()
+            const product = this.products.find((product) => product.id === id);
+            console.log(product)
+      
+              if (!product) {
                 console.log('Error al obtener el producto:')
-                return;
-            }
-
-            products[productIndex].title = updateProduct.title;
-            products[productIndex].description = updateProduct.description;
-            products[productIndex].price = updateProduct.price;
-            products[productIndex].thumbnail = updateProduct.thumbnail;
-            products[productIndex].code = updateProduct.code;
-            products[productIndex].stock = updateProduct.stock;
-            
+                return 
+              }
+              
+                product.title = data.title || product.title
+                product.description = data.description || product.description
+                product.price = data.price || product.price
+                product.thumbnail = data.thumbnail || product.thumbnail
+                product.code = data.code || product.code
+                product.stock = data.stock || product.stock
+                product.status = data.status || product.status
+              
             console.log(`Producto actualizado con ID ${id}`)
-            this.guardarProductos(products)
-            this.getProducts()
-        })
-        .catch((e) => {
+            await fs.promises.writeFile(this.path, JSON.stringify(this.products, null, 2));
+            return product
+
+          } catch (e) {
             console.log('Error al obtener el producto:', e)
-            return e
-        })
+          }
     }    
 
-    deleteProduct(id) {
+    async deleteProduct(id) {
+      try {
+        await this.getProducts()
+
         const productIndex = this.products.findIndex((p) => p.id === id)
+        console.log(productIndex)
         if (productIndex === -1) {
           return console.log('El producto que quiere eliminar no existe')
         }
     
         this.products.splice(productIndex, 1)
         console.log(`Se eliminó el producto con ID ${id}`)
-        this.guardarProductos()
-        this.getProducts()
-        
-        return
-    }
-    
-    guardarProductos(products) {
-        try {
-          const data = JSON.stringify(products || this.products, null, 2)
-          fs.writeFileSync(this.path, data, 'utf-8')
-          console.log('Producto guardado correctamente')
-        } catch (err) {
-          console.log('Error al guardar los productos')
-        }
-    }
+        await fs.promises.writeFile(this.path, JSON.stringify(this.products, null, 2));
+        return productIndex
+
+      } catch (error) {
+        console.log('Error al eliminar el producto:', error)
+      } 
+  }
+
 }
 
 const manager = new ProductManager('./products.json')
-
-manager.getProducts()
-    .then(() =>{
-    })
-    .catch (() =>{
-        
-    })
-
-manager.getProductById(2)
-    .then(() => {
-
-    })
-    .catch(() => {
-        
-     })
-
-/*manager.updateProduct(4,
-   {
-    title: "Mouse",
-    description: "Marca Genius",
-    price: "$5000",
-    thumbnail: "img4",
-    code: "1004",
-    stock: "5",
-})*/
-
-//manager.deleteProduct(1)
 
 module.exports= ProductManager
 
